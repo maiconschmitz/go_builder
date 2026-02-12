@@ -1,5 +1,5 @@
 # Base oficial do Go com Debian Bookworm
-FROM golang:1.24.0-bookworm
+FROM golang:1.24.13-bookworm
 
 # Versão do Go
 ARG GO_VERSION=1.24.0
