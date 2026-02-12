@@ -7,3 +7,11 @@ updates:
       day: "sunday"
     open-pull-requests-limit: 3
     target-branch: "develop"
+
+  - package-ecosystem: "docker"
+    directory: "/1.24.0"
+    schedule:
+      interval: "weekly"
+      day: "sunday"
+    open-pull-requests-limit: 3
+    target-branch: "develop"
