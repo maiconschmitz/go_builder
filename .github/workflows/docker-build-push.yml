@@ -5,11 +5,13 @@ on:
     branches: [ main ]
     paths:
       - '1.23.4/Dockerfile'
+      - '1.24.0/Dockerfile'
       - '.github/workflows/docker-build-push.yml'
   pull_request:
     branches: [ main ]
     paths:
       - '1.23.4/Dockerfile'
+      - '1.24.0/Dockerfile'
   release:
     types: [ published ]
   workflow_dispatch:
@@ -33,6 +35,9 @@ jobs:
     permissions:
       contents: read
       packages: write
+    strategy:
+      matrix:
+        go-version: ['1.23.4', '1.24.0']
 
     steps:
     - name: Baixa código do repositório
@@ -55,37 +60,35 @@ jobs:
       with:
         images: ${{ env.REGISTRY }}/${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}
         tags: |
-          type=ref,event=branch
-          type=ref,event=pr
-          type=semver,pattern={{version}}
-          type=semver,pattern={{major}}.{{minor}}
-          type=semver,pattern={{major}}
-          type=raw,value=latest,enable={{is_default_branch}}
-          type=raw,value=${{ github.event.inputs.version || '1.23.4' }},enable={{is_default_branch}}
+          type=ref,event=branch,suffix=-${{ matrix.go-version }}
+          type=ref,event=pr,suffix=-${{ matrix.go-version }}
+          type=semver,pattern={{version}},suffix=-${{ matrix.go-version }}
+          type=raw,value=${{ matrix.go-version }}
+          type=raw,value=latest,enable=${{ matrix.go-version == '1.24.0' }}
 
     - name: Constrói e publica imagem Docker
       uses: docker/build-push-action@v5
       with:
-        context: ./1.23.4
-        file: ./1.23.4/Dockerfile
+        context: ./${{ matrix.go-version }}
+        file: ./${{ matrix.go-version }}/Dockerfile
         push: ${{ github.event_name != 'pull_request' && (github.event_name == 'workflow_dispatch' && inputs.push_to_registry == 'true' || github.event_name != 'workflow_dispatch') }}
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
+        cache-from: type=gha,scope=${{ matrix.go-version }}
+        cache-to: type=gha,mode=max,scope=${{ matrix.go-version }}
         platforms: linux/amd64,linux/arm64
 
     - name: Verifica construção da imagem
       if: github.event_name == 'pull_request'
       run: |
-        echo "✅ Imagem construída com sucesso!"
+        echo "✅ Imagem ${{ matrix.go-version }} construída com sucesso!"
         echo "🏷️ Tags: ${{ steps.meta.outputs.tags }}"
         echo "📋 Labels: ${{ steps.meta.outputs.labels }}"
 
     - name: Notifica sucesso da publicação
       if: success() && github.event_name != 'pull_request'
       run: |
-        echo "✅ Imagem Docker publicada com sucesso!"
+        echo "✅ Imagem Docker ${{ matrix.go-version }} publicada com sucesso!"
         echo "📦 Imagem: ${{ env.REGISTRY }}/${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}"
         echo "🏷️ Tags: ${{ steps.meta.outputs.tags }}"
         echo "🚀 A imagem está disponível no Docker Hub!"
@@ -93,6 +96,6 @@ jobs:
     - name: Notifica falha na construção
       if: failure()
       run: |
-        echo "❌ Falha ao construir ou publicar a imagem Docker"
+        echo "❌ Falha ao construir ou publicar a imagem Docker ${{ matrix.go-version }}"
         echo "🔍 Verifique os logs acima para mais detalhes"
         exit 1
