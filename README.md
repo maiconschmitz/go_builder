@@ -15,7 +15,13 @@ A imagem é projetada com foco em:
 
 ## 🚀 Versões Disponíveis
 
-### Go 1.24.0 (Latest)
+### Go 1.25.0 (Latest)
+
+- **Diretório**: `1.25.0/`
+- **Base**: `golang:1.25.0-bookworm`
+- **Tag**: `go-builder:1.25.0`
+
+### Go 1.24.0
 
 - **Diretório**: `1.24.0/`
 - **Base**: `golang:1.24.0-bookworm`
@@ -77,23 +83,23 @@ Esta imagem oferece suporte nativo para cross-compile entre arquiteturas:
 
 ### Construção da Imagem
 
-Você pode construir a imagem para a versão desejada (ex: `1.24.0` ou `1.23.4`).
+Você pode construir a imagem para a versão desejada (ex: `1.25.0` ou `1.24.0`).
 
 ```bash
-# Construir a imagem Go 1.24.0 (arquitetura atual)
-cd 1.24.0
-docker build -t go-builder:1.24.0 .
+# Construir a imagem Go 1.25.0 (arquitetura atual)
+cd 1.25.0
+docker build -t go-builder:1.25.0 .
 
 # Construir para múltiplas arquiteturas (requer Docker buildx)
-docker buildx build --platform linux/amd64,linux/arm64 -t go-builder:1.24.0 .
+docker buildx build --platform linux/amd64,linux/arm64 -t go-builder:1.25.0 .
 ```
 
 ### Uso como Base
 
 ```dockerfile
 # Estágio de construção
-# Você pode alterar a tag para 1.23.4 se necessário
-FROM maiconschmitz/go-builder:1.24.0 AS builder
+# Você pode alterar a tag para 1.24.0 ou 1.23.4 se necessário
+FROM maiconschmitz/go-builder:1.25.0 AS builder
 
 # Copiar os arquivos go.mod e go.sum
 COPY go.mod go.sum ./
