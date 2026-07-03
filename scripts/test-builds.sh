@@ -7,7 +7,7 @@ VERSIONS_FILE="$ROOT_DIR/versions.txt"
 
 tmpdirs=()
 cleanup() {
-  if [ "${#tmpdirs[@]}" -gt 0 ]; then
+  if [[ "${#tmpdirs[@]}" -gt 0 ]]; then
     rm -rf "${tmpdirs[@]}"
   fi
 }
@@ -64,19 +64,19 @@ EOF
   echo "✅ Go $version validado com sucesso."
 }
 
-if [ "$#" -gt 1 ]; then
+if [[ "$#" -gt 1 ]]; then
   echo "Uso: $0 [versao]" >&2
   echo "Exemplo: $0 1.26" >&2
   exit 1
 fi
 
-if [ "$#" -eq 1 ]; then
+if [[ "$#" -eq 1 ]]; then
   run_test "$1"
   exit 0
 fi
 
 versions="$(awk 'NF && $1 !~ /^#/' "$VERSIONS_FILE")"
-if [ -z "$versions" ]; then
+if [[ -z "$versions" ]]; then
   echo "Nao ha versoes listadas em $VERSIONS_FILE" >&2
   exit 1
 fi

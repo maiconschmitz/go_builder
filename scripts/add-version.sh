@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [ $# -ne 1 ]; then
+if [[ $# -ne 1 ]]; then
   echo "Uso: $0 <versao>" >&2
   echo "Exemplo: $0 1.26" >&2
   exit 1
@@ -24,14 +24,14 @@ if grep -qx "$VERSION" "$VERSIONS_FILE"; then
 fi
 
 TEMPLATE_VERSION="$(grep -v '^#' "$VERSIONS_FILE" | tail -n 1)"
-if [ -z "$TEMPLATE_VERSION" ]; then
+if [[ -z "$TEMPLATE_VERSION" ]]; then
   echo "Nao foi possivel descobrir uma versao base em $VERSIONS_FILE" >&2
   exit 1
 fi
 TEMPLATE_DIR="$ROOT_DIR/$TEMPLATE_VERSION"
 TARGET_DIR="$ROOT_DIR/$VERSION"
 
-if [ ! -f "$TEMPLATE_DIR/Dockerfile" ]; then
+if [[ ! -f "$TEMPLATE_DIR/Dockerfile" ]]; then
   echo "Dockerfile base nao encontrado em $TEMPLATE_DIR/Dockerfile" >&2
   exit 1
 fi
@@ -45,9 +45,10 @@ printf '%s\n' "$VERSION" >> "$VERSIONS_FILE"
   printf 'updates:\n'
 
   while IFS= read -r line; do
-    [ -n "$line" ] || continue
+    [[ -n "$line" ]] || continue
     case "$line" in
       \#*) continue ;;
+      *) ;;
     esac
 
     cat <<EOF
