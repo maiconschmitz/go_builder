@@ -30,3 +30,12 @@ go.work.sum
 # Editor/IDE
 # .idea/
 # .vscode/
+
+# Claude Code local settings
+.claude/settings.local.json
+
+# Cursor local settings
+.cursor/cli-config.json
+
+# macOS
+.DS_Store

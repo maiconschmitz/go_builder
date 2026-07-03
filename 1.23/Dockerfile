@@ -1,8 +1,8 @@
 # Base oficial do Go com Debian Bookworm
-FROM golang:1.23.4-bookworm
+FROM golang:1.23-bookworm
 
 # Versão do Go
-ARG GO_VERSION=1.23.4
+ARG GO_VERSION=1.23
 
 # Metadados da imagem
 LABEL maintainer="maiconschmitz@gmail.com" \
