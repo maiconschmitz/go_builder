@@ -1,0 +1,60 @@
+version: '3'
+
+vars:
+  IMAGE_NAME: "go-builder"
+  USERNAME: "maiconschmitz"
+  LATEST_VERSION:
+    sh: tail -n 1 versions.txt
+  VERSIONS:
+    sh: awk 'NF && $1 !~ /^#/' versions.txt | tr '\n' ' '
+
+tasks:
+  default:
+    desc: Lista todos os comandos disponíveis
+    cmds:
+      - task --list
+
+  build:
+    desc: Realiza o build de uma única versão (arquitetura atual). Exemplo= task build VERSION=1.25
+    requires:
+      vars: [VERSION]
+    cmds:
+      - echo "🚀 Construindo imagem local para a versão {{.VERSION}}..."
+      - >
+        docker build 
+        -t {{.USERNAME}}/{{.IMAGE_NAME}}:{{.VERSION}} 
+        {{if eq .VERSION .LATEST_VERSION}}-t {{.USERNAME}}/{{.IMAGE_NAME}}:latest{{end}} 
+        ./{{.VERSION}}
+
+  build-all:
+    desc: Realiza o build de todas as versões
+    cmds:
+      - for:
+          var: VERSION
+          in: "{{.VERSIONS}}"
+        cmd: task build VERSION={{.VERSION}}
+
+  buildx:
+    desc: Realiza o build cross-compile (multi-arquitetura) de uma versão. Exemplo= task buildx VERSION=1.25
+    requires:
+      vars: [VERSION]
+    cmds:
+      - echo "🌍 Construindo imagens multi-arquitetura (amd64, arm64) para a versão {{.VERSION}}..."
+      - >
+        docker buildx build --platform linux/amd64,linux/arm64 
+        -t {{.USERNAME}}/{{.IMAGE_NAME}}:{{.VERSION}} 
+        {{if eq .VERSION .LATEST_VERSION}}-t {{.USERNAME}}/{{.IMAGE_NAME}}:latest{{end}} 
+        ./{{.VERSION}}
+
+  buildx-all:
+    desc: Realiza o build cross-compile para todas as versões
+    cmds:
+      - for:
+          var: VERSION
+          in: "{{.VERSIONS}}"
+        cmd: task buildx VERSION={{.VERSION}}
+
+  test:
+    desc: Executa a validacao ponta a ponta das imagens suportadas. Exemplo= task test VERSION=1.25
+    cmds:
+      - ./scripts/test-builds.sh{{if .VERSION}} {{.VERSION}}{{end}}

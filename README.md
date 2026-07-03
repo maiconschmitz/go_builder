@@ -1,156 +1,133 @@
-# Go Builder Image 🚀
+# Go Builder Image
 
-Imagem Docker, para build de aplicações Go, com suporte a cross-compile para linux/amd64 e linux/arm64.
+Imagens Docker para build de aplicações Go, com suporte a cross-compile para `linux/amd64` e `linux/arm64`.
 
-## 📋 Sobre o Projeto
+## Visão geral
 
-Este repositório contém uma imagem Docker otimizada para build de aplicações Go.
+Este repositório mantém uma imagem por versão suportada do Go.
+A lista de versões suportadas fica em [versions.txt](/Users/maiconschmitz/projects/mcn/go_builder/versions.txt). Cada linha corresponde a uma pasta de versão, como `1.23/`, `1.24/` ou `1.25/`.
 
-A imagem é projetada com foco em:
+Cada imagem usa a base oficial `golang:<versão>-bookworm`, instala dependências úteis para build e deixa o ambiente pronto para compilar projetos Go em pipelines de CI ou em builds locais. O arquivo `versions.txt` é consumido pelo `Taskfile`, pela workflow do GitHub Actions e pelo helper de scaffolding.
 
-- **Build otimizado**: Cache de módulos e build
-- **Cross-compile**: Suporte nativo para múltiplas arquiteturas
-- **Segurança**: Execução com usuário não-root
-- **Performance**: Otimização de layers e cache
+## O que a imagem entrega
 
-## 🚀 Versões Disponíveis
+- Base oficial do Go em Debian Bookworm
+- Suporte a cross-compile com `gcc-aarch64-linux-gnu` e `gcc-x86-64-linux-gnu`
+- Ferramentas de build comuns como `git`, `make`, `curl`, `file` e `pkg-config`
+- Variáveis de ambiente úteis para builds reproduzíveis
+- `WORKDIR` definido em `/src`
+- Timezone configurado para `America/Sao_Paulo`
 
-### Go 1.25.0 (Latest)
+## Versões suportadas
 
-- **Diretório**: `1.25.0/`
-- **Base**: `golang:1.25.0-bookworm`
-- **Tag**: `go-builder:1.25.0`
+A imagem para cada linha suportada é gerada a partir do diretório correspondente em `versions.txt`.
+O helper `scripts/add-version.sh` cria a nova pasta e o Dockerfile com base na última versão já suportada.
 
-### Go 1.24.0
+## Build local
 
-- **Diretório**: `1.24.0/`
-- **Base**: `golang:1.24.0-bookworm`
-- **Tag**: `go-builder:1.24.0`
+Este projeto usa [`Taskfile`](https://taskfile.dev/) para facilitar builds locais e reproduzir a lógica da pipeline.
 
-### Go 1.23.4
+Pré-requisitos:
 
-- **Diretório**: `1.23.4/`
-- **Base**: `golang:1.23.4-bookworm`
-- **Tag**: `go-builder:1.23.4`
+1. Docker ou Docker Desktop instalado
+2. `go-task` instalado
+3. `docker buildx` habilitado se você quiser build multi-arquitetura
 
-## 🛠️ Características da Imagem
-
-### Configurações de Ambiente
-
-- **Timezone**: America/Sao_Paulo
-- **Go**: Configurações otimizadas para build
-- **Usuário**: Não-root (65532:65532)
-- **Diretório de trabalho**: `/src`
-- **Cache de módulos**: `/go/pkg/mod`
-- **Cache de build**: `/root/.cache/go-build`
-
-### Dependências Incluídas
-
-- `curl` - Cliente HTTP
-- `ca-certificates` - Certificados SSL/TLS
-- `git` - Controle de versão
-- `make` - Ferramenta de build
-- `file` - Identificação de tipos de arquivo
-- `pkg-config` - Configuração de pacotes
-- `build-essential` - Ferramentas de compilação
-- `gcc-aarch64-linux-gnu` - Compilador para ARM64
-- `gcc-x86-64-linux-gnu` - Compilador para x86_64
-
-### Cross-Compile
-
-Esta imagem oferece suporte nativo para cross-compile entre arquiteturas:
-
-- 🏗️ **Multi-arquitetura**: `linux/amd64` e `linux/arm64`
-- ⚡ **Performance**: Compilação otimizada com cache
-- 🔒 **Segurança**: Build estático (CGO_ENABLED=0)
-- 📦 **Compatibilidade**: Suporte completo ao ecossistema Go
-
-**Nota**: O Dockerfile inclui compiladores cross-compile, mas por padrão o `docker build` só gera a imagem para a arquitetura atual. Para gerar imagens para múltiplas arquiteturas, use `docker buildx build --platform`.
-
-### Otimizações Aplicadas
-
-- ✅ Cache de módulos Go persistente
-- ✅ Cache de build Go persistente
-- ✅ Build estático (CGO_ENABLED=0)
-- ✅ Stripping de símbolos (-s -w)
-- ✅ Trimpath para builds reproduzíveis
-- ✅ Cross-compile para aarch64 e x86-64
-- ✅ Ferramentas de build (git, make, curl)
-- ✅ Timezone configurado
-
-## 📖 Como Usar
-
-
-### Construção da Imagem
-
-Você pode construir a imagem para a versão desejada (ex: `1.25.0` ou `1.24.0`).
+Se for a primeira vez usando buildx:
 
 ```bash
-# Construir a imagem Go 1.25.0 (arquitetura atual)
-cd 1.25.0
-docker build -t go-builder:1.25.0 .
-
-# Construir para múltiplas arquiteturas (requer Docker buildx)
-docker buildx build --platform linux/amd64,linux/arm64 -t go-builder:1.25.0 .
+docker buildx create --use
 ```
 
-### Uso como Base
+Comandos principais:
+
+```bash
+task
+task build VERSION=1.25
+task build-all
+task buildx VERSION=1.25
+task buildx-all
+task test
+task test VERSION=1.25
+```
+
+Observações:
+
+- `task build` gera a imagem para a arquitetura atual.
+- `task buildx` gera a imagem para `linux/amd64` e `linux/arm64`.
+- O `Taskfile` adiciona a tag `latest` automaticamente quando a versão é `1.25`.
+- `task test` chama um script dedicado que constrói cada imagem e compila um app temporário `hello world` dentro dela.
+- `task test VERSION=1.25` valida apenas uma versão específica, o que ajuda em verificações pontuais e no CI.
+
+## Uso como imagem base
+
+Exemplo de uso em um `Dockerfile` de aplicação:
 
 ```dockerfile
-# Estágio de construção
-# Você pode alterar a tag para 1.24.0 ou 1.23.4 se necessário
-FROM maiconschmitz/go-builder:1.25.0 AS builder
+FROM maiconschmitz/go-builder:1.25 AS builder
 
-# Copiar os arquivos go.mod e go.sum
+WORKDIR /src
+
 COPY go.mod go.sum ./
-
-# Baixar as dependências
 RUN go mod download
 
-# Copiar todo o código-fonte
 COPY . .
+RUN CGO_ENABLED=0 GOOS=linux go build -o /src/dist/app ./main.go
 
-# Compilar a aplicação
-RUN CGO_ENABLED=0 GOOS=linux go build -o dist/app main.go
+FROM alpine:3.20
 
-# Estágio de execução
-FROM alpine:latest
-
-# Define o fuso horário
 ENV TZ=America/Sao_Paulo
-
 WORKDIR /app
 
-# Instalar o tzdata para configurar o fuso horário e adicionar um usuário não-root
-RUN apk add --no-cache tzdata && \
+RUN apk add --no-cache ca-certificates tzdata && \
     adduser -D app
 
-# Instalar os certificados de autoridades de certificação (CA)
-RUN apk --no-cache add ca-certificates
+COPY --from=builder /src/dist/app /app/app
 
-# Copiar apenas o binário necessário do estágio anterior
-COPY --from=builder /src/dist/app /app/
-
-# Mudar para o usuário não-root
 USER app
-
-# Comando padrão de inicialização
-CMD ["./app"]
+CMD ["/app/app"]
 ```
 
-### Exemplo com Docker Compose
+## Publicação e CI
 
-```yaml
-version: '3.8'
-services:
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    ports:
-      - "8080:8080"
-    environment:
-      - CGO_ENABLED=0
-    volumes:
-      - .:/src
-```
+A publicação automatizada acontece pela workflow `.github/workflows/docker-build-push.yml`:
+
+- executa build para todas as versões listadas em `versions.txt`
+- usa `docker buildx`
+- publica imagens multi-arquitetura no Docker Hub
+- aplica a tag `latest` apenas para a última versão da lista
+
+## Dependabot
+
+O arquivo `.github/dependabot.yml` está configurado para acompanhar as imagens Docker dos diretórios atuais.
+Na prática, ele ajuda a manter cada versão existente atualizada com os `PATCH` releases da respectiva linha do Go.
+
+Isso significa:
+
+- `1.23` continua recebendo correções da linha `1.23.x`
+- `1.24` continua recebendo correções da linha `1.24.x`
+- `1.25` continua recebendo correções da linha `1.25.x`
+
+Quando surgir uma nova versão menor ou maior, como `1.26`, a adição precisa ser feita manualmente no repositório, criando:
+
+- a nova pasta `1.26/`
+- o novo `Dockerfile`
+- as atualizações no `Taskfile`
+- as mudanças na workflow de CI
+- a entrada correspondente no Dependabot
+
+## Manutenção
+
+Se você adicionar uma nova versão do Go, atualize junto:
+
+- `versions.txt`
+- o diretório da imagem
+- o `Taskfile`
+- a workflow do GitHub Actions
+- a entrada correspondente no Dependabot
+- este `README.md`
+
+O arquivo `AGENTS.md` contém orientações de manutenção mais detalhadas para agentes e colaboradores.
+
+Para facilitar esse fluxo, há um helper em [scripts/add-version.sh](/Users/maiconschmitz/projects/mcn/go_builder/scripts/add-version.sh) que cria a nova pasta, gera o `Dockerfile` e recompõe o Dependabot a partir da linha mais recente já suportada.
+A validação ponta a ponta fica em [scripts/test-builds.sh](/Users/maiconschmitz/projects/mcn/go_builder/scripts/test-builds.sh) e é a mesma usada por `task test`.

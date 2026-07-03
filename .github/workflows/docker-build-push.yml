@@ -4,24 +4,18 @@ on:
   push:
     branches: [ main ]
     paths:
-      - '1.23.4/Dockerfile'
-      - '1.24.0/Dockerfile'
-      - '1.25.0/Dockerfile'
+      - 'versions.txt'
+      - '**/Dockerfile'
       - '.github/workflows/docker-build-push.yml'
   pull_request:
     branches: [ main ]
     paths:
-      - '1.23.4/Dockerfile'
-      - '1.24.0/Dockerfile'
-      - '1.25.0/Dockerfile'
+      - 'versions.txt'
+      - '**/Dockerfile'
   release:
     types: [ published ]
   workflow_dispatch:
     inputs:
-      version:
-        description: 'Versão da imagem (ex: 1.23.4)'
-        required: true
-        default: '1.23.4'
       push_to_registry:
         description: 'Publicar no Docker Hub'
         type: boolean
@@ -32,14 +26,42 @@ env:
   IMAGE_NAME: go-builder
 
 jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      versions: ${{ steps.matrix.outputs.versions }}
+      latest_version: ${{ steps.matrix.outputs.latest_version }}
+    steps:
+    - name: Baixa código do repositório
+      uses: actions/checkout@v4
+
+    - name: Prepara matriz de versões
+      id: matrix
+      run: |
+        versions_json=$(python3 - <<'PY'
+        from pathlib import Path
+        import json
+
+        versions = [
+            line.strip()
+            for line in Path("versions.txt").read_text().splitlines()
+            if line.strip() and not line.startswith("#")
+        ]
+        print(json.dumps(versions))
+        PY
+        )
+        echo "versions=$versions_json" >> "$GITHUB_OUTPUT"
+        echo "latest_version=$(tail -n 1 versions.txt)" >> "$GITHUB_OUTPUT"
+
   build-and-push:
+    needs: prepare
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
     strategy:
       matrix:
-        go-version: ['1.23.4', '1.24.0', '1.25.0']
+        go-version: ${{ fromJson(needs.prepare.outputs.versions) }}
 
     steps:
     - name: Baixa código do repositório
@@ -66,7 +88,7 @@ jobs:
           type=ref,event=pr,suffix=-${{ matrix.go-version }}
           type=semver,pattern={{version}},suffix=-${{ matrix.go-version }}
           type=raw,value=${{ matrix.go-version }}
-          type=raw,value=latest,enable=${{ matrix.go-version == '1.25.0' }}
+          type=raw,value=latest,enable=${{ matrix.go-version == needs.prepare.outputs.latest_version }}
 
     - name: Constrói e publica imagem Docker
       uses: docker/build-push-action@v5
