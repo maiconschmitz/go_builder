@@ -5,9 +5,9 @@ Imagens Docker para build de aplicações Go, com suporte a cross-compile para `
 ## Visão geral
 
 Este repositório mantém uma imagem por versão suportada do Go.
-A lista de versões suportadas fica em [versions.txt](/Users/maiconschmitz/projects/mcn/go_builder/versions.txt). Cada linha corresponde a uma pasta de versão, como `1.23/`, `1.24/` ou `1.25/`.
+A lista de versões suportadas fica em [versions.txt](/Users/maiconschmitz/projects/mcn/go_builder/versions.txt). Cada linha corresponde a uma pasta de versão, de `1.23/` até `1.27/`.
 
-Cada imagem usa a base oficial `golang:<versão>-bookworm`, instala dependências úteis para build e deixa o ambiente pronto para compilar projetos Go em pipelines de CI ou em builds locais. O arquivo `versions.txt` é consumido pelo `Taskfile`, pela workflow do GitHub Actions e pelo helper de scaffolding.
+Cada imagem usa a base oficial `golang:<major.minor.patch>-bookworm`, instala dependências úteis para build e deixa o ambiente pronto para compilar projetos Go em pipelines de CI ou em builds locais. O arquivo `versions.txt` é consumido pelo `Taskfile`, pela workflow do GitHub Actions e pelo helper de scaffolding.
 
 ## O que a imagem entrega
 
@@ -21,7 +21,8 @@ Cada imagem usa a base oficial `golang:<versão>-bookworm`, instala dependência
 ## Versões suportadas
 
 A imagem para cada linha suportada é gerada a partir do diretório correspondente em `versions.txt`.
-O helper `scripts/add-version.sh` cria a nova pasta e o Dockerfile com base na última versão já suportada.
+O diretório e a tag publicada usam `MAJOR.MINOR`; o `Dockerfile` fixa a base oficial no patch mais recente daquela linha. O Dependabot propõe novos patches semanalmente, sem avançar para outra linha.
+O helper `scripts/add-version.sh` cria a nova pasta e o Dockerfile com base na última versão já suportada. Informe a linha e o patch mais recente, por exemplo: `./scripts/add-version.sh 1.28 1.28.0`.
 
 ## Build local
 
@@ -43,28 +44,28 @@ Comandos principais:
 
 ```bash
 task
-task build VERSION=1.25
+task build VERSION=1.27
 task build-all
-task buildx VERSION=1.25
+task buildx VERSION=1.27
 task buildx-all
 task test
-task test VERSION=1.25
+task test VERSION=1.27
 ```
 
 Observações:
 
 - `task build` gera a imagem para a arquitetura atual.
 - `task buildx` gera a imagem para `linux/amd64` e `linux/arm64`.
-- O `Taskfile` adiciona a tag `latest` automaticamente quando a versão é `1.25`.
+- O `Taskfile` adiciona a tag `latest` automaticamente para a última linha de `versions.txt` (atualmente `1.27`).
 - `task test` chama um script dedicado que constrói cada imagem e compila um app temporário `hello world` dentro dela.
-- `task test VERSION=1.25` valida apenas uma versão específica, o que ajuda em verificações pontuais e no CI.
+- `task test VERSION=1.27` valida apenas uma versão específica, o que ajuda em verificações pontuais e no CI.
 
 ## Uso como imagem base
 
 Exemplo de uso em um `Dockerfile` de aplicação:
 
 ```dockerfile
-FROM maiconschmitz/go-builder:1.25 AS builder
+FROM maiconschmitz/go-builder:1.27 AS builder
 
 WORKDIR /src
 
@@ -104,13 +105,17 @@ Na prática, ele ajuda a manter cada versão existente atualizada com os `PATCH`
 
 Isso significa:
 
-- `1.23` continua recebendo correções da linha `1.23.x`
-- `1.24` continua recebendo correções da linha `1.24.x`
-- `1.25` continua recebendo correções da linha `1.25.x`
+- `1.23` só aceita correções da linha `1.23.x`
+- `1.24` só aceita correções da linha `1.24.x`
+- `1.25` só aceita correções da linha `1.25.x`
+- `1.26` só aceita correções da linha `1.26.x`
+- `1.27` só aceita correções da linha `1.27.x`
 
-Quando surgir uma nova versão menor ou maior, como `1.26`, a adição precisa ser feita manualmente no repositório, criando:
+As linhas antigas permanecem disponíveis, mas só recebem novos patches enquanto o projeto Go as mantiver sob suporte.
 
-- a nova pasta `1.26/`
+Quando surgir uma nova versão menor ou maior, como `1.28`, a adição precisa ser feita manualmente no repositório, criando:
+
+- a nova pasta `1.28/`
 - o novo `Dockerfile`
 - as atualizações no `Taskfile`
 - as mudanças na workflow de CI

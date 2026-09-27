@@ -26,6 +26,7 @@ O foco das imagens é build reprodutível, suporte a cross-compile para `linux/a
 
 - O diretório da imagem deve corresponder à versão do Go.
 - A variável `GO_VERSION` no `Dockerfile` deve bater com a pasta da imagem.
+- A base `golang` no `Dockerfile` deve fixar o patch mais recente da linha, por exemplo `golang:1.27.1-bookworm` em `1.27/`.
 - A tag `latest` acompanha a última versão listada em `versions.txt`.
 - `versions.txt` é a fonte de verdade para o conjunto suportado e é lido pelo `Taskfile`, pela workflow e pelo helper de scaffolding.
 - O Dependabot deve acompanhar `PATCH` updates apenas nas versões já existentes.
@@ -42,15 +43,15 @@ O foco das imagens é build reprodutível, suporte a cross-compile para `linux/a
 Use `task` para reproduzir os builds da imagem:
 
 - `task` lista os comandos disponíveis.
-- `task build VERSION=1.25` constrói uma versão específica.
+- `task build VERSION=1.27` constrói uma versão específica.
 - `task build-all` constrói todas as versões.
-- `task buildx VERSION=1.25` faz build multi-arquitetura.
+- `task buildx VERSION=1.27` faz build multi-arquitetura.
 - `task buildx-all` roda todas as versões em multi-arquitetura.
 - `task test` executa a validação ponta a ponta em todas as versões suportadas.
-- `task test VERSION=1.25` executa a validação em apenas uma versão.
+- `task test VERSION=1.27` executa a validação em apenas uma versão.
 
 Observação: o `Taskfile` tagueia as imagens locais como `maiconschmitz/go-builder:<versão>`, adicionando `latest` para a última versão listada em `versions.txt`.
-O helper `scripts/add-version.sh` cria a nova pasta, deriva o `Dockerfile` da última versão suportada e recompõe o Dependabot.
+O helper `scripts/add-version.sh <major.minor> <major.minor.patch>` cria a nova pasta, deriva o `Dockerfile` da última versão suportada e recompõe o Dependabot.
 O helper `scripts/test-builds.sh` cria um app temporário `hello world`, constrói cada imagem e compila o binário dentro dela.
 
 ## O que observar ao editar
@@ -63,4 +64,4 @@ O helper `scripts/test-builds.sh` cria um app temporário `hello world`, constr�
 
 ## Resumo técnico
 
-As imagens usam a base oficial `golang:<versão>-bookworm`, instalam dependências para build e cross-compile, e deixam o `WORKDIR` em `/src`.
+As imagens usam a base oficial `golang:<major.minor.patch>-bookworm`, instalam dependências para build e cross-compile, e deixam o `WORKDIR` em `/src`.
