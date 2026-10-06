@@ -27,15 +27,15 @@ RUN set -eux; \
     # Atualiza e instala dependências essenciais
     apt-get update && \
     apt-get install -y --no-install-recommends \
-    curl \
+    build-essential \
     ca-certificates \
+    curl \
+    file \
+    gcc-aarch64-linux-gnu \
+    gcc-x86-64-linux-gnu \
     git \
     make \
-    file \
-    pkg-config \
-    build-essential \
-    gcc-aarch64-linux-gnu \
-    gcc-x86-64-linux-gnu && \
+    pkg-config && \
     # Limpeza completa
     rm -rf /var/lib/apt/lists/*
 
