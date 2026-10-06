@@ -15,7 +15,7 @@ tasks:
       - task --list
 
   build:
-    desc: Realiza o build de uma única versão (arquitetura atual). Exemplo= task build VERSION=1.25
+    desc: Realiza o build de uma única versão (arquitetura atual). Exemplo= task build VERSION=1.27
     requires:
       vars: [VERSION]
     cmds:
@@ -35,7 +35,7 @@ tasks:
         cmd: task build VERSION={{.VERSION}}
 
   buildx:
-    desc: Realiza o build cross-compile (multi-arquitetura) de uma versão. Exemplo= task buildx VERSION=1.25
+    desc: Realiza o build cross-compile (multi-arquitetura) de uma versão. Exemplo= task buildx VERSION=1.27
     requires:
       vars: [VERSION]
     cmds:
@@ -55,6 +55,6 @@ tasks:
         cmd: task buildx VERSION={{.VERSION}}
 
   test:
-    desc: Executa a validacao ponta a ponta das imagens suportadas. Exemplo= task test VERSION=1.25
+    desc: Executa a validacao ponta a ponta das imagens suportadas. Exemplo= task test VERSION=1.27
     cmds:
       - ./scripts/test-builds.sh{{if .VERSION}} {{.VERSION}}{{end}}

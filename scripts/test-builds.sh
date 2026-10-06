@@ -27,9 +27,14 @@ validate_version() {
 
 run_test() {
   local version="$1"
-  local tmpdir appdir image
+  local tmpdir appdir image patch_version
 
   validate_version "$version"
+  patch_version="$(sed -nE 's/^FROM golang:([0-9]+\.[0-9]+\.[0-9]+)-bookworm$/\1/p' "$ROOT_DIR/$version/Dockerfile")"
+  if [[ "$patch_version" != "$version".* ]]; then
+    echo "Base Go invalida para a linha $version" >&2
+    exit 1
+  fi
 
   tmpdir="$(mktemp -d "${TMPDIR:-/private/tmp}/go-builder-test.${version}.XXXXXX")"
   tmpdirs+=("$tmpdir")
@@ -55,9 +60,9 @@ EOF
   image="go-builder-test:$version"
   echo "🚦 Validando build ponta a ponta para Go $version..."
   docker build --pull -t "$image" "$ROOT_DIR/$version"
-  docker run --rm -v "$appdir":/src -w /src "$image" sh -lc '
+  docker run --rm -e GO_PATCH_VERSION="$patch_version" -v "$appdir":/src -w /src "$image" sh -lc '
     set -e
-    /usr/local/go/bin/go version
+    /usr/local/go/bin/go version | grep -F "go${GO_PATCH_VERSION} "
     CGO_ENABLED=0 GOOS=linux /usr/local/go/bin/go build -o /tmp/hello-world ./main.go
     /tmp/hello-world | grep -qx "hello world"
   '
